@@ -1,10 +1,11 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import {signIn, signOut, useSession} from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { CreateTodo } from "~/components/CreateTodo";
 import Image from "next/image";
 
 const Home: NextPage = () => {
-  const {data: sessionData, status} = useSession()
+  const { data: sessionData, status } = useSession();
   return (
     <>
       <Head>
@@ -13,7 +14,8 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="min-h-screen bg-olive-one p-0 selection:bg-green-two md:py-24 md:px-8">
-        <main className="mx-auto min-h-screen max-w-none rounded-none bg-cream-four px-5 pt-24 pb-10 outline-none md:max-w-[60rem] md:rounded-2xl md:px-8 md:outline md:outline-offset-8 md:outline-cream-four">
+        <main
+          className="mx-auto min-h-screen max-w-none rounded-none bg-cream-four px-5 pt-24 pb-10 outline-none md:max-w-[60rem] md:rounded-2xl md:px-8 md:outline md:outline-offset-8 md:outline-cream-four">
           <h1 className="mb-6 text-center text-4xl font-bold text-gray-three">
             ToDo List
           </h1>
@@ -30,7 +32,9 @@ const Home: NextPage = () => {
                   Sign out
                 </button>
               </div>
-              <div>Todo components coming soon...</div>
+              <div>
+                <CreateTodo />
+              </div>
             </>
           )}
           {status !== "loading" && !sessionData && (
