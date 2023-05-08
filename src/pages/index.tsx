@@ -1,8 +1,9 @@
 import { type NextPage } from "next";
 import Head from "next/head";
+import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { CreateTodo } from "~/components/CreateTodo";
-import Image from "next/image";
+import { Todos } from "~/components/Todos";
 
 const Home: NextPage = () => {
   const { data: sessionData, status } = useSession();
@@ -34,6 +35,7 @@ const Home: NextPage = () => {
               </div>
               <div>
                 <CreateTodo />
+                <Todos />
               </div>
             </>
           )}

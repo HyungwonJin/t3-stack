@@ -50,11 +50,11 @@ export const todoRouter = createTRPCRouter({
       }
     });
   }),
-  delete: protectedProcedure.input(z.string()).mutation(({ctx, input}) => {
+  delete: protectedProcedure.input(z.string()).mutation(({ ctx, input }) => {
     return ctx.prisma.todo.delete({
       where: {
         id: input
       }
-    })
+    });
   })
 });
