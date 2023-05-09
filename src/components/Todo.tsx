@@ -1,32 +1,106 @@
-import type {Todo} from "~/server/types"
+import type { Todo } from "~/server/types";
 import { useState } from "react";
 import { api } from "~/utils/api";
+import toast from "react-hot-toast";
 
 type TodoProps = {
   todo: Todo;
 }
-export function Todo ({todo}: TodoProps) {
-  const {id, text, isCompleted} = todo;
+
+export function Todo({ todo }: TodoProps) {
+  const { id, text, isCompleted } = todo;
   const [currentTodo, setCurrentTodo] = useState(text);
-  const trpc = api.useContext()
+  const trpc = api.useContext();
 
-  const {mutate: toggleMutation} = api.todo.toggle.useMutation({
+  const { mutate: toggleMutation } = api.todo.toggle.useMutation({
+    onMutate: async ({ id, is_completed }) => {
+      await trpc.todo.all.cancel();
+      const previousTodos = trpc.todo.all.getData();
+      trpc.todo.all.setData(undefined, (prev) => {
+        if (!prev) return previousTodos;
+        return prev.map((t) => {
+          if (t.id === id) {
+            return {
+              ...t,
+              isCompleted: is_completed
+            };
+          }
+          return t;
+        });
+      });
+      return { previousTodos };
+    },
+    onSuccess: ({ isCompleted }) => {
+      if (isCompleted) {
+        toast.success("Todo completed");
+      }
+    },
+    onError: (err, is_completed, context) => {
+      toast.error(
+        `An error occured when marking todo as ${
+          is_completed ? "completed" : "uncompleted"
+        }`
+      );
+      console.error(err);
+      if (!context) return;
+      trpc.todo.all.setData(undefined, () => context.previousTodos);
+    },
     onSettled: async () => {
       await trpc.todo.all.invalidate();
     }
-  })
+  });
 
-  const {mutate: deleteMutation} = api.todo.delete.useMutation({
+  const { mutate: deleteMutation } = api.todo.delete.useMutation({
+    onMutate: async (deleteId) => {
+      await trpc.todo.all.cancel();
+      const previousTodos = trpc.todo.all.getData();
+      trpc.todo.all.setData(undefined, (prev) => {
+        if (!prev) return previousTodos;
+        return prev.filter((t) => t.id !== deleteId);
+      });
+      return { previousTodos };
+    },
+    onError: (err, _, context) => {
+      toast.error("An error occurred when deleting todo");
+      console.error(err);
+      if (!context) return;
+      trpc.todo.all.setData(undefined, () => context.previousTodos);
+    },
     onSettled: async () => {
       await trpc.todo.all.invalidate();
     }
-  })
+  });
 
-  const {mutate: updateMutation} = api.todo.update.useMutation({
+  const { mutate: updateMutation } = api.todo.update.useMutation({
+    onMutate: async ({ id, text: currentTodo }) => {
+      await trpc.todo.all.cancel();
+      const previousTodos = trpc.todo.all.getData();
+      trpc.todo.all.setData(undefined, (prev) => {
+        if (!prev) return previousTodos;
+        return prev.map((t) => {
+          if (t.id === id) {
+            return {
+              ...t,
+              text: currentTodo
+            };
+          }
+          return t;
+        });
+      });
+      setCurrentTodo(currentTodo);
+      return { previousTodos };
+    },
+    onError: (err, _, context) => {
+      toast.error("An error occured when editing todo");
+      console.error(err);
+      setCurrentTodo(text);
+      if (!context) return;
+      trpc.todo.all.setData(undefined, () => context.previousTodos);
+    },
     onSettled: async () => {
-      await trpc.todo.all.invalidate()
+      await trpc.todo.all.invalidate();
     }
-  })
+  });
 
   return (
     <div className="flex items-center justify-between rounded-md border-2 border-gray-one px-5 py-4 mt-2">
@@ -38,7 +112,7 @@ export function Todo ({todo}: TodoProps) {
           id={id}
           checked={isCompleted}
           onChange={(e) => {
-            toggleMutation({id, is_completed: e.target.checked})
+            toggleMutation({ id, is_completed: e.target.checked });
           }}
         />
         <input
@@ -48,10 +122,10 @@ export function Todo ({todo}: TodoProps) {
           placeholder="Enter a todo"
           value={currentTodo}
           onChange={(e) => {
-            setCurrentTodo(e.target.value)
+            setCurrentTodo(e.target.value);
           }}
           onBlur={(e) => {
-            updateMutation({id, text: e.target.value})
+            updateMutation({ id, text: e.target.value });
           }}
         />
         <span
@@ -66,7 +140,7 @@ export function Todo ({todo}: TodoProps) {
         type="button"
         className="group ml-4 flex items-center justify-center rounded-md bg-cream-four p-2 hover:bg-steel-one focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-five"
         onClick={() => {
-          deleteMutation(id)
+          deleteMutation(id);
         }}
       >
         <svg
@@ -91,5 +165,5 @@ export function Todo ({todo}: TodoProps) {
         </svg>
       </button>
     </div>
-  )
+  );
 }
